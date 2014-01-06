@@ -277,6 +277,64 @@ Array mit Serieninformationen
 	    actors: 'Emily Deschanel,David Boreanaz,Michaela Conlin,T.J. Thyne, ...',
 	    genres: 'Crime,Drama' } ]
 
+#### getSeriesDetailBySeriesIdFromDb
+
+Serieninfo
+
+**Parameter**
+
+- seriesID: string 
+- callback: function 
+
+*Beispiel:* 
+
+	mngr.getSeriesDetailBySeriesIdFromDb('75682',cb);  
+
+**Result in callback**  
+
+Array mit Serieninformationen	
+	
+	[
+	  {
+	    "id": "75682",
+	    "name": "Bones",
+	    "overview": "Dr. Temperance Brennan ist eine forensische Anthropologin...",
+	    "network": "FOX",
+	    "language": "de",
+	    "firstaired": "2005-09-13",
+	    "rating": "TV-14",
+	    "actors": "Emily Deschanel,David Boreanaz,...",
+	    "genres": "Crime,Drama"
+	  }
+	]
+
+
+#### getSeriesOverviewsBySeriesIdFromDb
+
+Übersicht für eine Serie
+
+**Parameter**
+
+- seriesID: string 
+- callback: function
+
+
+*Beispiel:* 
+
+	mngr.getSeriesOverviewsBySeriesIdFromDb('75682',cb);  
+	
+**Result in callback**  	
+	
+	[
+	  {
+	    "id": "75682",
+	    "name": "Bones",
+	    "seasons": 10,
+	    "episodes": 182,
+	    "images": 218
+	  }
+	]
+
 
 #### getImagesDetailsBySeriesIdFromDb
 

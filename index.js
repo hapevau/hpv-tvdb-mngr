@@ -65,7 +65,12 @@ Viewer.prototype.dbInfos = function(cb) {
 Viewer.prototype.all = function(cb) {
 	var self = this;
 	self.db.all('SELECT * FROM series_overview', cb);
-};  
+};   
+
+Viewer.prototype.series = function(id, cb) {
+	var self = this;
+	self.db.all('SELECT * FROM series_overview WHERE id=?', id, cb);
+};
 
 Viewer.prototype.actors = function(cb) {
 	var self = this;
@@ -461,7 +466,13 @@ tvdbManager.prototype.getSeriesDetailBySeriesIdFromDb = function(id, cb) {
 
 tvdbManager.prototype.getImagesDetailsBySeriesIdFromDb = function(id, cb) {
 	this.viewer.imagesSeries(id, cb);
-};     
+};    
+
+
+tvdbManager.prototype.getSeriesOverviewsBySeriesIdFromDb = function(id, cb) {
+	this.viewer.series (id, cb);
+};
+
 
 tvdbManager.prototype.getSeasonsDetailsBySeriesIdFromDb = function(id, cb) {
 	this.viewer.seasonsDetailSeries(id, cb);
