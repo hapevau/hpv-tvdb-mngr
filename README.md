@@ -10,7 +10,7 @@ Das Programm dient folgenden Hauptaufgaben
 
 3) Taggen von Videodateien für iTunes (Wrapper für AtomicParsley)    
 
-Für das Speichern der Daten in einer lokalen Datenbank wird eine vorbereitete (nicht gefüllte) sqlite3-DB (tvdb.db), sowie ein script (createDb.sql) zum Einrichten/erneuten Anlegen der DB mitgeliefert. 
+Für das Speichern der Daten in einer lokalen Datenbank wird eine vorbereitete (nicht gefüllte) sqlite3-DB (tvdb.db), sowie ein script (createDb.sql) zum Einrichten/erneuten Anlegen der DB mitgeliefert. Die Datei tvdb.db kopieren und bei der Iinitialisierung des Managers übergeben ist das empfohlene Vorgehen. Wenn die Datei in der route des aufsührenden scripts liegt, wird sie automatisch initialisiert und der 2.te Parameter kann weggelassen werden.
 
 Die Datenbankfunktionalität ist so ausgerichtet, dass alle Daten, die für ein Mediacenter nötig sind, abgefragt werden können. Dies beinhaltet Details zu den Serien/Staffeln und Episoden, wie auch übergreifende Abfragen auf Genre, Schauspieler und Seriennamen.
 
@@ -24,8 +24,9 @@ Das Programm verlangt das Vorhandensein von AtomicParsley in einer Version >=0.9
 	
 ## Verwendung 
 
-	var tvdbmngr = require('hpv-tvdb-mngr').TvDbManager,
-		mngr = new tvdbmngr('API-KEY'),
+	var tvdbmngr = require('hpv-tvdb-mngr').TvDbManager,  
+		db = new sqlite.Database('tvdb.db'),
+		mngr = new tvdbmngr('API-KEY', db),
 		cb = function(err, res) { console.log((err) ? err : res); };
 	
 	mngr.searchTvDbCom('Bones', cb);     
