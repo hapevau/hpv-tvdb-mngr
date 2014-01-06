@@ -24,9 +24,9 @@ Das Programm verlangt das Vorhandensein von AtomicParsley in einer Version >=0.9
 	
 ## Verwendung 
 
-	var tvdbmngr = require('hpv-tvdb-mngr),
-		mngr = new tvdbmngr(%API-Key%),
-		cb = function(err, rs) { console.log((err) ? err : res); };
+	var tvdbmngr = require('hpv-tvdb-mngr').TvDbManager,
+		mngr = new tvdbmngr('API-KEY'),
+		cb = function(err, res) { console.log((err) ? err : res); };
 	
 	mngr.searchTvDbCom('Bones', cb);     
 	

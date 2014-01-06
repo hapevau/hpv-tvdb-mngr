@@ -27,6 +27,6 @@
     "xml2js": "*",
     "file": "*"
   },
-  "files": ["createDb.sql", "imagehtml.template", "tvdb.db", "input", "output"],
+  "files": ["createDb.sql", "imagehtml.template", "index.js", "tvdb.db", "input", "output"],
   "bugs": { "email": "hpv@leo.uberspace.de" }
 }
