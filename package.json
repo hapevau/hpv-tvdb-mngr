@@ -28,5 +28,5 @@
     "file": "*"
   },
   "files": ["createDb.sql", "imagehtml.template", "tvdb.db", "input", "output"],
-  "bugs" { "email": "hpv@leo.uberspace.de" }
+  "bugs": { "email": "hpv@leo.uberspace.de" }
 }
