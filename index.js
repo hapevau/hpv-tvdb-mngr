@@ -44,7 +44,7 @@ var tv = require('hpv-tvdb'),
 // ====================== viewer ======================
 
 function Viewer(tvdb) {
-	this.db = tvdb || db; 
+	this.db = tvdb; 
 	this.getMapping = function(row) {
 		var result = {}; 
 		for (var prop in row) {
@@ -212,7 +212,7 @@ Viewer.prototype.getImagesBySeriesIdAndImageType = function(seriesid, type, cb) 
 //================= serializer ===========================
 	
 function Serializer(tvdb, apiclient){
-	this.db = tvdb || db;   
+	this.db = tvdb;   
 	this.client = apiclient || new tv.TvDbClient('');
 }   
 
