@@ -24,8 +24,9 @@ Das Programm verlangt das Vorhandensein von AtomicParsley in einer Version >=0.9
 	
 ## Verwendung 
 
-	var tvdbmngr = require('hpv-tvdb-mngr').TvDbManager,  
-		db = new sqlite.Database('tvdb.db'),
+	var tvdb = require('hpv-tvdb-mngr'), 
+	    tvdbmngr = tvdb.TvDbManager, 
+		db = tvdb.dbSetup('mydb.db', 'node_modules/hpv-tvdb-mngr/createDb.sql'),
 		mngr = new tvdbmngr('API-KEY', db),
 		cb = function(err, res) { console.log((err) ? err : res); };
 	
