@@ -3,7 +3,6 @@ var tv = require('hpv-tvdb'),
 	xml2js = require('xml2js'),  
 	filewalk = require('file'),
 	parser = new xml2js.Parser({explicitArray: false}),
-	db = new sqlite.Database('tvdb.db'),
 	EventEmitter = require('events').EventEmitter,
 	util = require('util'), 
 	getfactory = function(who) {
@@ -203,6 +202,11 @@ Viewer.prototype.getEpisodeIdByTitleAndEpisode = function(title, episode, cb) {
 Viewer.prototype.getImagesBySeriesName = function(title, cb) {
 	var self = this;   
 	self.db.all('select * from all_images where seriesid in (select id from series where name=?)', title, cb);
+};
+
+Viewer.prototype.getImagesBySeriesIdAndImageType = function(seriesid, type, cb) {
+	var self = this;   
+	self.db.all('select * from series_images where seriesid=? AND imagetype=?', [seriesid, type], cb);
 }
 
 //================= serializer ===========================
@@ -343,7 +347,23 @@ Serializer.prototype.saveSeries = function(id, banners) {
 	self.saveSeriesInfos(id);
 	self.saveActors(id);
 	self.saveImageUrls(id, banners);
-}; 
+};    
+
+Serializer.prototype.setOwnGenre = function(seriesid, genre) {
+	var self=this; 
+	self.db.run("DELETE FROM series_genres WHERE seriesid=?", seriesid, function(err){
+		if(err) self.emit('error', err);
+		if(!err) {
+			self.db.run("INSERT INTO series_genres (seriesid, genre) VALUES(?,?)",[
+				seriesid,
+				genre,
+			], function(err2) { 
+				if(err2) self.emit('error', err2); 
+				if(!err2) self.emit('genreupdate', {part: 'series_genres'});
+			} );
+		}
+	});
+}
 
 // =============== Decorator ==========================
 
@@ -357,7 +377,16 @@ function SerializerDecorator(s) {
 			callback(e, null);
 		 });
 		this.serializer.deleteSeries(id);
-	}
+	};
+	this.setOwnGenre = function(seriesid, genre, callback) {
+		this.serializer.on('error', function(e) {
+			if(callback) callback(e, null);
+		 }); 
+		this.serializer.on('genreupdate', function(d) {
+			if(callback) callback(null, d);
+		}); 
+		this.serializer.setOwnGenre(seriesid, genre);
+	};
 	this.saveSeries = function(id, callback, banners) {
 		var b=['fanart', 'poster', 'season', 'series'],
 		    episodes=false,
@@ -414,10 +443,20 @@ function SerializerDecorator(s) {
 
 // =========== tvdbmanager =====================  
 
+function dbSetup(filename){
+	var db = new sqlite.Database(filename || 'tvdb.db');
+	var fs = require('fs');
+	var sql = fs.readFileSync('createDb.sql').toString(); 
+	db.exec(sql, function(err) {
+	   //console.log('Erstellung '+filename+ ' war nicht moeglich: '+err); 
+	});
+	return db;
+}
+
 function tvdbManager(apikey, tvdb) {
 	this.client = new tv.TvDbClient(apikey);
 	this.serializer = new SerializerDecorator(new Serializer(tvdb || db, this.client)); 
-	this.viewer = new Viewer(tvdb || db);
+	this.viewer = new Viewer(tvdb || dbSetup('tvdb.db'));
 } 
 
 tvdbManager.prototype.searchTvDbCom = function(title, cb) {
@@ -514,10 +553,18 @@ tvdbManager.prototype.getDbInfos = function(cb) {
 tvdbManager.prototype.saveImageFomTheTvDbComToDisk = function(url, filename, cb) {
 	var self=this;
 	self.client.getImageAndSave(url, filename, cb);
+};       
+
+tvdbManager.prototype.setOwnGenre = function(seriesid, genre, cb) {
+	this.serializer.setOwnGenre(seriesid, genre, cb);
+};      
+
+tvdbManager.prototype.getImagesBySeriesIdAndImageTypeFromDb = function(seriesid, type, cb) {
+	this.viewer.getImagesBySeriesIdAndImageType(seriesid, type, cb);
 };
 
 tvdbManager.prototype.tagger = function(apPath, title, tven) {
-	var self=this
+	var self=this,
 		getTagOptions = function(data) {
 			var s = '', o='';
 			for(var prop in data) {
@@ -804,4 +851,5 @@ tvdbManager.prototype.tagger = function(apPath, title, tven) {
 	}; // end retúrn taggger
 }; // end tagger
 
-module.exports.TvDbManager = tvdbManager; 
+module.exports.TvDbManager = tvdbManager;      
+module.exports.dbSetup = dbSetup;
