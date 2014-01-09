@@ -1,6 +1,6 @@
 {
   "name": "hpv-tvdb-mngr",
-  "version": "0.0.9",   
+  "version": "1.0.0",   
   "homepage": "https://hpv.leo.uberspace.de",
   "description": "Datenbank für hpv-tvdb und mp4-Tagger. Holt Daten von thetvdb.com und speichert diese in einer sqlite3 db und schreibt über AtomicParsley iTunes-Tags in angegebene mp4-Videos.",
   "main": "index.js",
