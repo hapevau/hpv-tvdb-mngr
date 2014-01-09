@@ -10,7 +10,7 @@ Das Programm dient folgenden Hauptaufgaben
 
 3) Taggen von Videodateien für iTunes (Wrapper für AtomicParsley)    
 
-Für das Speichern der Daten in einer lokalen Datenbank wird eine vorbereitete (nicht gefüllte) sqlite3-DB (tvdb.db), sowie ein script (createDb.sql) zum Einrichten/erneuten Anlegen der DB mitgeliefert. Die Datei tvdb.db kopieren und bei der Iinitialisierung des Managers übergeben ist das empfohlene Vorgehen. Wenn die Datei in der route des aufsührenden scripts liegt, wird sie automatisch initialisiert und der 2.te Parameter kann weggelassen werden.
+Für das Speichern der Daten in einer lokalen Datenbank wird eine vorbereitete (nicht gefüllte) sqlite3-DB (tvdb.db), sowie ein script (createDb.sql) zum Einrichten/erneuten Anlegen der DB mitgeliefert.
 
 Die Datenbankfunktionalität ist so ausgerichtet, dass alle Daten, die für ein Mediacenter nötig sind, abgefragt werden können. Dies beinhaltet Details zu den Serien/Staffeln und Episoden, wie auch übergreifende Abfragen auf Genre, Schauspieler und Seriennamen.
 
@@ -22,7 +22,9 @@ Das Programm verlangt das Vorhandensein von AtomicParsley in einer Version >=0.9
 
 	npm install hpv-tvdb-mngr
 	
-## Verwendung 
+## Verwendung
+
+Zur Verwendung muss der Manager mit einem gültigen API-KEY und einer lokalen Datenbank initialisiert werden. Um eine DB zu erzeugen, kann die Funktion dbSetup verwendet werden. Sie benötigt den Dateinamen der zu erzeugenden Datenbank und den Pfad zum Erstellungsscript (createDb.sql). 
 
 	var tvdb = require('hpv-tvdb-mngr'), 
 	    tvdbmngr = tvdb.TvDbManager, 
@@ -443,9 +445,31 @@ Array mit Episodeninformationen
 	    gueststars: 'Patricia Belcher,Michael Grant Terry,...' } ]
 
 
-#### saveImageFomTheTvDbComToDisk 
+#### getImagesBySeriesIdAndImageTypeFromDb
 
-Lädt ein Bild von thetvdb.com und speichert es lokal
+Liefert alle Bilder eines bestimmten Tpys aus der DB    
+
+- seriesId: string  
+- imagetype: string
+- callback: function
+
+*Beispiel:*
+
+	mngr.getImagesBySeriesIdAndImageTypeFromDb('75682', 'season', cb); 
+
+**Result in callback** 
+
+	[ { seriesid: '75682',
+	    imagetype: 'season',
+	    imageurl: 'http://thetvdb.com/banners/seasons/75682-0-2.jpg',
+	    language: 'en' }]
+
+
+#### saveImageFomTheTvDbComToDisk
+
+
+Lädt ein Bild von thetvdb.com und speichert es lokal 
+
 
 **Parameter**
 
