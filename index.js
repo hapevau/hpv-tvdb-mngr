@@ -443,10 +443,10 @@ function SerializerDecorator(s) {
 
 // =========== tvdbmanager =====================  
 
-function dbSetup(filename){
+function dbSetup(filename, createFile){
 	var db = new sqlite.Database(filename || 'tvdb.db');
 	var fs = require('fs');
-	var sql = fs.readFileSync('createDb.sql').toString(); 
+	var sql = fs.readFileSync(createFile).toString(); 
 	db.exec(sql, function(err) {
 	   //console.log('Erstellung '+filename+ ' war nicht moeglich: '+err); 
 	});
