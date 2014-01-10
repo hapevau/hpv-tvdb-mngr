@@ -512,18 +512,7 @@ Tagger
 
 #### tag
 
-Schreibt Tags in eine Videodatei. Die Methode kann auf zwei Arten aufgerufen werden. Für eine einzelne Videodatei werden input, output, imagefile im Aufruf übergeben. Die Zuordnung zu einer Episodeninformation erfolgt in der Konstruktion des Tagger über tven (z.Bsp.: s01e02). Wird an erster Stelle ein Array übergeben, so entfällt die tven-Information im Tagger und die Übergabe der Einzelinformationen im Aufruf und es werden alle im Array übergebenen Videos getaggt. Das taggen erfolgt in 3 Schritten:
-
-
-1. taggen der tagMap-Tags
-2. Erzeugen einer Plist und Eintrag iTunMOVI (--rDNSatom)
-3. Einbinden des Bildes (artwork) mit evtl. vorherigem Löschen vorhandener artworks  
-
-Hierfür werden 3 Einzelmethoden des Taggers verwendet
-
-1. tagTags(inp, outp, cb) 
-2. tagPlist(inp, outp, cb) 
-3. tagCover(inp, outp, imgPath, cb, remove)
+Schreibt Tags in eine Videodatei. Die Methode kann auf zwei Arten aufgerufen werden. Für eine einzelne Videodatei werden input, output, imagefile im Aufruf übergeben. Die Zuordnung zu einer Episodeninformation erfolgt in der Konstruktion des Tagger über tven (z.Bsp.: s01e02). Wird an erster Stelle ein Array übergeben, so entfällt die tven-Information im Tagger. Es werden alle im Array übergebenen Videos getaggt. 
 
 ***Schreiben aller Tags***  
 
@@ -533,11 +522,10 @@ Hierfür werden 3 Einzelmethoden des Taggers verwendet
 - output-Video: string (wenn null wird AT mit der Option --overwrite aufgerufen)
 - Seasonimage: string (artwork)
 - callback: function
-- remove: boolean (bei true wird bestehendes artwork entfernt - default=false)
 
 *Beispiel (Einzelaufruf):*
 
-	mngr.tagger('./AtomicParsley', 'Bones', 's02e01').tag('input/video.mp4', 'output/s02e01.mp4', 'input/bild.jpg', cb, true);
+	mngr.tagger('./AtomicParsley', 'Bones', 's02e01').tag('input/video.mp4', 'output/s02e01.mp4', 'input/bild.jpg', cb);
 
 **Parameter (Arrayaufruf)**
 
@@ -547,7 +535,7 @@ Hierfür werden 3 Einzelmethoden des Taggers verwendet
 *Beispiel (Arrayaufruf):*  	
 	
 	mngr.tagger('./AtomicParsley', 'Bones').tag([
-			{tven: "s02e01", input: 'input/video.mp4', output: 'output/s02e01.mp4', image: 'input/75682-1.jpg', remove: true}
+			{tven: "s02e01", input: 'input/video.mp4', output: 'output/s02e01.mp4', image: 'input/75682-1.jpg'}
 			], 
 			function(err, res) {
 			    console.log((err) ? err : res);
@@ -555,51 +543,15 @@ Hierfür werden 3 Einzelmethoden des Taggers verwendet
 
 **Result in callback** 
 
-Der callback wird für jede Input-Datei aufgerufen. Nach jedem taggen werden die Tags der Output-Datei ausgelesen und als Objekt zurückgegeben. Die verwendete tagMap wird als zweite Property mitgeliefert.
+Der callback wird für jede Input-Datei aufgerufen. Nach jedem taggen werden die Tags der Output-Datei ausgelesen und als Objekt zurückgegeben. 
 
-	{ tags: 
-	   { '©nam': 'Folge 1 - Ein Toter auf den Gleisen',
-	     '©ART': 'Bones',
-	     aART: 'Bones',
-	     '©alb': 'Bones',
-	     '©gen': 'Crime,Drama',
-	     '©day': '2005',
-	     tvsh: 'Bones',
-	     tvnn: 'FOX',
-	     tven: 's02e01',
-	     sonm: 'Folge 1 - Ein Toter auf den Gleisen',
-	     soar: 'Bones',
-	     soaa: 'Bones',
-	     soal: 'Bones, Staffel 2',
-	     sosn: 'Bones',
-	     desc: 'Ein Auto, das auf den Gleisen abgestellt wurde, ...',
-	     ldes: 'Ein Auto, das auf den Gleisen abgestellt wurde, wird von einem Zug erfasst. ...',
-	     iTunMOVI: '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "...">\n<plist version="1.0">...\n</plist>',
-	     '©grp': 'Bones' },
-	  tagmap: 
-	   { '©alb': 'album',
-	     '©nam': 'title',
-	     '©ART': 'artist',
-	     aART: 'albumArtist',
-	     '©grp': 'grouping',
-	     trkn: 'tracknum',
-	     tvsh: 'TVShowName',
-	     tven: 'TVEpisode',
-	     tvsn: 'TVSeasonNum',
-	     tves: 'TVEpisodeNum',
-	     desc: 'description',
-	     ldes: 'longdesc',
-	     sonm: 'sortOrder name',
-	     soar: 'sortOrder artist',
-	     soaa: 'sortOrder albumartist',
-	     soal: 'sortOrder album',
-	     sosn: 'sortOrder show',
-	     disk: 'disk',
-	     stik: 'stik',
-	     tvnn: 'TVNetwork',
-	     '©day': 'year',
-	     '©gen': 'genre' } }
-
+	{ method: 'tag',
+	  tags: 
+	   { cmd: './AtomicParsley film2.mp4 --outputXML',
+	     stdoutXml: XML
+	     json: { tags: [Object], artwork: [Object] } 
+	   } 
+	}
 
 #### getTags
 
@@ -609,15 +561,34 @@ erlaubt das Auslesen von Tags für eine beliebige (mp4) Videodatei.
 
 	mngr.tagger('./AtomicParsley').getTags('output/s02e01.mp4',cb);
 
-**Parameter
-**
+**Parameter**
 
 - video: string
 - callback: function
 
 **Result in callback** 
 
-siehe tag-Rückgabe
+siehe tag-Rückgabe (tags)  
+
+####  removeArtwork  
+
+Erlaubt das Entfernen der artwork für eine Datei bzw. erstellt eine zweite Datei ohne das artwork
+
+*Beispiel:*
+
+	mngr.tagger('./AtomicParsley').removeArtwork(input, output, cb);
+
+**Parameter**
+
+- input: string (Video mit artwork) 
+- output: string (die outputdatei, oder null für --overWrite)
+- callback: function 
+
+**Result in callback**
+
+	{ method: 'removeArtwork',
+	  cmd: './AtomicParsley video.mp4 --artwork REMOVE_ALL  --overWrite',
+	  stdout: 'No changes.\n' }
 
 #### util
 
@@ -678,7 +649,7 @@ unterstützt werden. Die Filterung erfolgt auf Dateiendung mp4 und m4a.
 
 *Beispiel:*  
 
-	mngr.tagger(').util().getSeasonFilesArray('"/Users/.../Bones/Staffel 01"', 'output', 'seasons/33332-1.jpg','1', false,cb);                                  
+	mngr.tagger(').util().getSeasonFilesArray('"/Users/.../Bones/Staffel 01"', 'output', 'seasons/33332-1.jpg','1', cb);                                  
 
 
 **Parameter** 
@@ -686,7 +657,6 @@ unterstützt werden. Die Filterung erfolgt auf Dateiendung mp4 und m4a.
 - seasonDir: string (Staffelverzeichnis)
 - outputDir: string (Ausgabeverzeichnis) 
 - imagePath: string (Pfad zum zu verwendenden Bild)
-- remove: boolean (vorherige artwork entfernen. default=false)
 - callback: function
 
 **Result in callback**  
@@ -696,8 +666,7 @@ Array mit Video-Dateien
 	[ { tven: 's01e01',
 	    input: '"/Users/.../Bones/Staffel 01/video1.mp4"',
 	    output: 'output/s01e01.mp4',
-	    image: 'seasons/33332-1.jpg',
-	    remove: false } ]
+	    image: 'seasons/33332-1.jpg' } ]
 
 #### extractImage
 
@@ -716,6 +685,8 @@ Extrahiert artwork aus einer Videodatei und speichert das Ergebnis. Der endgült
 **Result in callback** 
 
 	{ file: 'input/extractedImageFromSeason1' } 
+
+ 
 		
 
 ### Sonstiges

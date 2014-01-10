@@ -171,16 +171,16 @@ Viewer.prototype.episodePlistByEpisodeId = function(id, cb) {
 	var self = this,
 		result = {},
 		makeDict = function(arr) {
-			var s='<dict>\n\t\t\t<key>name</key>\n\t\t\t<string>%s</string>\n\t\t</dict>\n\t\t',
+			var s='<dict>\n\t\t\t<key>name</key>\n\t\t\t<string>%s</string>\n\t\t</dict>',
 				result='';
 			for(var i=0, len=arr.length;i<len;i+=1) {
-				result+=util.format(s, arr[i]);
+				result+='\n\t\t' + util.format(s, arr[i]) +((i<len-1) ? '' : '\n');
 			} 
 			return result;
 		};  
 	
 	self.db.all('select directors, screenwriters, "cast" from plistdata where episodeid=?', id, function(err, res){
-		var template ='<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n\t<key>cast</key>\n\t<array>%s\n\t</array>\n\t<key>codirectors</key>\n\t<array/>\n\t<key>directors</key>\n\t<array>\n\t\t%s\n\t</array>\n\t<key>producers</key>\n\t<array/>\n\t<key>screenwriters</key>\n\t<array>\n\t\t%s\n\t</array>\n\t<key>studio</key>\n\t<string></string>\n</dict>\n</plist>';
+		var template ='<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n\t<key>cast</key>\n\t<array>\t\t%s\t</array>\n\t<key>codirectors</key>\n\t<array/>\n\t<key>directors</key>\n\t<array>\t\t%s\t</array>\n\t<key>producers</key>\n\t<array/>\n\t<key>screenwriters</key>\n\t<array>\t\t%s\t</array>\n\t<key>studio</key>\n\t<string></string>\n</dict>\n</plist>';
 		if(res && res.length>0) {
 			result['cast'] = makeDict(res[0].cast.split(',')); 
 			result['directors'] = makeDict(res[0].directors.split(',')); 
@@ -455,8 +455,8 @@ function dbSetup(filename, createFile){
 
 function tvdbManager(apikey, tvdb) {
 	this.client = new tv.TvDbClient(apikey);
-	this.serializer = new SerializerDecorator(new Serializer(tvdb || db, this.client)); 
-	this.viewer = new Viewer(tvdb || dbSetup('tvdb.db'));
+	this.serializer = new SerializerDecorator(new Serializer(tvdb, this.client)); 
+	this.viewer = new Viewer(tvdb);
 } 
 
 tvdbManager.prototype.searchTvDbCom = function(title, cb) {
@@ -507,16 +507,13 @@ tvdbManager.prototype.getImagesDetailsBySeriesIdFromDb = function(id, cb) {
 	this.viewer.imagesSeries(id, cb);
 };    
 
-
 tvdbManager.prototype.getSeriesOverviewsBySeriesIdFromDb = function(id, cb) {
 	this.viewer.series (id, cb);
 };
 
-
 tvdbManager.prototype.getSeasonsDetailsBySeriesIdFromDb = function(id, cb) {
 	this.viewer.seasonsDetailSeries(id, cb);
 };
-
 
 tvdbManager.prototype.getEpisodesDetailsBySeriesIdFromDb = function(id, cb) {
 	this.viewer.episodesDetailSeries(id, cb);
@@ -576,178 +573,97 @@ tvdbManager.prototype.tagger = function(apPath, title, tven) {
 				} // end if
 			} // end for
 			return s;
-		}; // end getTagOptions    
-	
+		}; // end getTagOptions       
 	this.ap = apPath || './AtomicParsley';  
 	this.title=title;
-	this.tven=tven;   	 
-	
+	this.tven=tven;   	 	
 	return {  
 		ap: self.ap,
 		title: self.title,
-		tven: self.tven,
-		tagTags: function(inp, outp, cb) {
-			var that=this,
-				cmd='',
-				out = (outp) 
-				      ? '--output '+outp 
-				      :' --overWrite',
-				input = inp,
-				exec = require('child_process').exec; 
-			
-			self.getTagsBySeriesTitleAndTvEpisodeIdFromDb(that.title, that.tven, function(err,res){
-				var tags = getTagOptions(res[0]);  
-				cmd = that.ap +' ' + input + ' ' + tags + out; 
-				if(err && cb){
-					cb(err, null);   
-				} 
-				else {
-					exec(cmd, function(err, stdout, stderr) {
-						if(err && cb) cb(err, null);
-						if(!err && cb) cb(null, stdout);
-					});
-				} // end else
-			});  // end getTagsBySeriesTitleAndTvEpisode
-		},  // end tagTags
-		tagPlist: function(inp, outp, cb) {
-			var that=this,
-				out = (outp) 
-				      ? '--output '+outp 
-					  :' --overWrite',
-				input = inp,   
-				cmd=that.ap +' ' + input + ' ' +'--rDNSatom' + ' "%s"' + ' name=iTunMOVI domain=com.apple.iTunes ' + out,
-				exec = require('child_process').exec; 
-			 
+		tven: self.tven, 
+		getApCmdPartTags: function(cb) {
+			var tags, that=this;
+			self.getTagsBySeriesTitleAndTvEpisodeIdFromDb(that.title, that.tven, function(err, res){
+				if(err) {
+					cb(err, null);
+				} else { 
+					var tags = getTagOptions(res[0]); 
+					cb(null, ' '+tags);
+				}
+			});
+		}, 
+		getApCmdPartPlist: function(cb) {
+			var plist, that=this;  
 			self.getEpisodeIdByTitleAndTvenFromDb(that.title, that.tven, function(err, res) {
 				if(err) cb(err, null);
 				if(!err) {
-					self.getEpisodePlistByEpisodeIdeFromDb(res.episodeid, function(err2, res2){
-						if(err2 && cb) cb(err2, null); 
-						if(!err2) {
-							exec(util.format(cmd, res2.replace(/"/g, '\\"')), function(err3, stdout, stderr) {
-								if(err3 && cb) cb(err3, null);
-								if(!err3 && cb) cb(null, stdout);
-							}); 
-						}
-					}); // end getEpisodePlist
-				} // end if
-			}); // end getEpisodeByTitleAndTvenFromDB   
-		}, // end tagPlist   
-		tagCover: function(inp, outp, imgPath, cb, remove) {
-			var that=this, 
-				path=require('path');
-				isUrl = (require('url').parse(imgPath).protocol) ? true : false,
-				fn = (isUrl) ? 'input/tagImage.jpg' : imgPath,
-				exec = require('child_process').exec,
-				out = (outp) 
-				      ? '--output '+outp 
-				      :'--overwrite',
-				input = inp,
-				fs = require('fs'), 
-				deleteTempFile = function() {
-					var files = fs.readdirSync(path.dirname(fn)),
-						filename = path.basename(fn).replace('.jpeg','').replace('.jpg','') +'-resized';
-					files.filter(function(f) {
-						return (f.indexOf(filename)>=0);
-					}).forEach(function(found) {fs.unlinkSync(path.resolve(path.dirname(fn),found))});
-				},
-				art = function(ip, op) {     
-					exec(that.ap +' "' + ip + '" ' + '--artwork ' + fn +' --overWrite', function(err2, stdout2, stderr2){
-						if(err2 || stderr2) cb({artError: err2||stderr2, cmd: that.ap +' "' + ip + '" ' + '--artwork ' + fn +' --overWrite'} , null);
-						if(!err2) cb(null,'artwork '+stdout2);  
-						deleteTempFile();  
-					});
-				},
-				doArtwork = function(ip, op) { 					 
-					if(op) {
-						fs.createReadStream(input).pipe(fs.createWriteStream(outp)); 
-						ip=outp;
-					} 
-					if(remove) {      
-                       	exec(that.ap +' ' + ip + ' ' + '--artwork REMOVE_ALL --overWrite', function(err3, stdout3, stderr3){
-							if(err3 || stderr3) cb({doArtworkError: err3 || stderr3, cmd: that.ap +' ' + ip + ' ' + '--artwork REMOVE_ALL --overWrite'}, null);
-							if(!err3) {  
-								art(ip, op);    
-							}
-						});   						
+					self.getEpisodePlistByEpisodeIdeFromDb(res.episodeid,function(err2, res2) {
+						if(err2) cb(err2, null);
+						if(!err2) cb(null, ' --rDNSatom ' + '"' + res2.replace(/"/g,'\\"') +'"' + ' name=iTunMOVI domain=com.apple.iTunes '); 
+					});  
+				}
+			});	  
+		},
+		getApCmdPartCover: function(imagePath, cb) {
+			cb(null, ' --artwork '+imagePath);
+		}, 
+		getApCmdPartRemoveArtwork: function(cb) {
+			cb(null, ' --artwork REMOVE_ALL ');
+		},
+		removeArtwork: function(input, output, cb) {
+			var exec = require('child_process').exec, that=this;
+			this.getApCmdPartRemoveArtwork(function(err, res) {
+				var cmd = that.ap + ' ' + input + res + ((output) ? ' --output '+ output : ' --overWrite');
+				exec(cmd, function(err, stdout, stderr) {
+					if(err || stderr) {
+						cb({err: err, stderr: stderr, cmd: cmd}, null);
 					} else {
-						art(ip, op);
-					}   			    
-				};  // end doArtwork end var
-				
-			if(isUrl) {  
-				self.client.getImageAndSave(imgPath, fn, function(err, res){
-					if(!err) {
-						doArtwork(input, outp);
-					} else {
-						cb(err, null);
-					}	
+						cb(null, {method: 'removeArtwork', cmd:cmd, stdout: stdout});
+					}
 				}); 
-			} else {
-				doArtwork(input, outp);
-			}
-		}, // end tagCover
-		tag: function(inp, outp, imgPath, cb, remove) { 
-			var input=inp, out=outp, that=this, arr; 
+			});  			
+		},
+		tag: function(inp, outp, imgPath, cb) { 
+			var input=inp, out=outp, that=this, arr, cmd=that.ap + ' ' + input,
+			 	exec = require('child_process').exec;
 			if( arguments.length<3 || util.isArray(arguments[0])) { 
 				arr = arguments[0] ; 
 				for(var i=0, len=arguments[0].length; i<len; i+=1) {  
 					that.tven = arr[i].tven;
-					that.tag(arr[i].input, arr[i].output, arr[i].image, arguments[1], arr[i].remove);
+					that.tag(arr[i].input, arr[i].output, arr[i].image, arguments[1]);
 				}
 			} else {  				
-				that.tagTags(input, out, function(err, res) {    
-					if(err && cb) {
-						cb({error:err, f: 'tagTags'}, null);
-					} else {
-						if(outp) {
-							input=outp;
-						}
-						that.tagPlist(input, null, function(err2, res) {
-							if(err2 && cb) {
-								cb({error:err2, f: 'tagPlist'}, null);
-							} else {   
-								setTimeout(function() {    
-									that.tagCover(input, null, imgPath, function(err3, res) { 										
-										if(err3 && cb) cb({error:err3, f: 'tagCover'}, null);
-										if(!err3) that.getTags(input, cb); 
-										
-									}, remove); // end tagCover
-								}, 10);  // end timeout								
-							}  // end third else
-						}); // end tagPlist
-					}  // end second else
-				}); // end tagTags
+				this.getApCmdPartTags(function(err, res) {
+					if(err) cb(err, null);
+					if(!err) {  
+						cmd+=res;
+						that.getApCmdPartPlist(function(err2, res2) {
+							if(err2) cb(err2, null);
+							if(!err2) {
+								cmd+=res2;  
+								that.getApCmdPartCover(imgPath, function(err3, res3){
+									if(err3) cb(err3, null);
+									if(!err3) {
+										cmd +=res3 + ((out) ? ' --output ' + out : '--overWrite'); 
+										exec(cmd, function(err4, stdout, stderr) {
+											if(err4 || stderr) {
+												cb({err: err, stderr: stderr, cmd: cmd}, null);                                                           
+											} 
+											else { 
+												var f = (out) ? out : input;   
+												that.util().getTags(f, function (err4, res4) {
+													cb(null, {method: 'tag', tags: (err4) ? {} : res4});                  
+												});	 
+											}
+										}); // end exec  
+									} // end if !err3
+								}); // end getCover
+							} // end if !err2
+						});  // end Plist
+					} // end if !err
+				}); // end Tags
 			}  // end first else	
 		}, // end tag
-		getTags: function(filename, cb) {
-			var erg,
-				res='',
-				ret={tags: {}, tagmap: tagMap},
-				that=this
-				cmd = that.ap + ' ' + filename + ' --outputXML',
-				exec = require('child_process').exec;
-			
-			exec(cmd, function(err, stdout, stderr){
-				if(err) {
-					cb(err, null);
-				} else { 
-					parser.parseString(stdout, function(err, res) {
-						if(res && res.AtomicParsley && res.AtomicParsley.atoms && res.AtomicParsley.atoms.atomString) {
-							erg = res.AtomicParsley.atoms.atomString;
-							for(var i=0, len=erg.length; i<len; i+=1) {
-								if(erg[i]['$'].name==='----'){ 
-									ret.tags[erg[i]['$'].reverseDNSname] = erg[i]['_'];				
-								} else {
-									ret.tags[erg[i]['$'].name] = erg[i]['_'];
-								}  
-							} // end for
-						}
-						cb(null, ret);
-					}); // end parser.parseString					
-				}  // end else
-			}); // end exec
-		},
 		util: function() {
 			var that=this;  
 			return { 
@@ -799,8 +715,7 @@ tvdbManager.prototype.tagger = function(apPath, title, tven) {
 					});
 				}, // end showImages
 				getFilesRecursive: function(seasonDir, cb) { 
-					var result = '', path=require('path'), counter=0;   
-					
+					var result = '', path=require('path'), counter=0;   					
 					filewalk.walk(seasonDir, function(err, dirPath, dirs, files) {  
 						if(err) {
 							cb(err, null) 
@@ -810,25 +725,39 @@ tvdbManager.prototype.tagger = function(apPath, title, tven) {
 									return path.extname(elem) === '.mp4' || path.extname(elem) === '.m4a';
 								});  
 								if(result && result.length>0) { 
-									counter+=1;
-									cb(null, {video: result[0], number: counter}); 
+									counter+=result.length;
+									cb(null, {video: result, number: counter}); 
 								} 		
 							}  // end if
 						} // end else						
 					}); // end filewalk
 				}, // end getFilesRecursive
-				getSeasonFilesArray: function(seasonDir, outputDir, seasonImg, seasonNbr, remove, cb) {
+				getSeasonFilesArray: function(seasonDir, outputDir, seasonImg, seasonNbr, cb) {
 					var that=this,
 						arr=[],
-						path=require('path'),	
+						path=require('path'), 
+						counter=1,
+						ep='' , 
 						callback=function(err, res) {
 							 if(err) {
 								cb(err, null);
-							} else {  
-								arr.push({tven: 's'+('0'+seasonNbr).substr(-2)+'e'+('0'+res.number).substr(-2) ,input: '"'+res.video+'"', output: path.resolve(outputDir,path.basename(res.video)), image: seasonImg, remove: remove});
+							} else {   
+								
+								if(res.video.length>0) {
+									for (var i=0; i < res.video.length; i++) {  
+										ep = 's'+('0'+seasonNbr).substr(-2)+'e'+('0'+(i+counter)).substr(-2);
+										arr.push({tven: ep ,input: '"'+res.video[i]+'"', output: path.resolve(outputDir,ep + path.extname(res.video[i])), image: seasonImg});
+										
+									};
+									counter+=i;
+								} else {  
+									ep = 's'+('0'+seasonNbr).substr(-2)+'e'+('0'+counter).substr(-2);
+									arr.push({tven: ep ,input: '"'+res.video+'"', output: path.resolve(outputDir,ep + path.extame(res.video)), image: seasonImg});   
+									counter+=1;  
+								}
+								
 							}
-						};
-					
+						};					
 					setTimeout(function() {
 						cb(null, arr);
 					}, 500);         
@@ -845,7 +774,21 @@ tvdbManager.prototype.tagger = function(apPath, title, tven) {
 							cb(null, {file: output});
 						}
 					});
-				} 
+				},
+				getTags: function(file, cb) {
+					var exec = require('child_process').exec,
+						cmd = that.ap +' '+ file +' --outputXML',
+					 	atoms;
+					exec(cmd, function(err, stdout, stderr) {
+						if(err || stderr) cb(err, null); 						 
+						if(stdout){  
+							parser.parseString(stdout, function(err, res){ 
+								atoms = (res.AtomicParsley) ? res.AtomicParsley.atoms : {};
+								cb(null, {cmd: cmd, stdoutXml: stdout, json: {tags: atoms.atomString, artwork: atoms.atomArtwork} });  
+							});   						 
+						} 
+					});  // end exec
+				} // end getTags
 			}; // end return util
 		} // end util
 	}; // end retúrn taggger
